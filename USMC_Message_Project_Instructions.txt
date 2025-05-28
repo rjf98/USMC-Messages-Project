@@ -1,0 +1,92 @@
+
+🧭 USMC Message Project: From Scratch to QA
+
+Step 1: Scrape USMC Message URLs
+--------------------------------
+Run:
+    python3 usmc_scraper_all_2025.py
+
+Purpose:
+    - Scrapes all MARADMIN/ALMAR message URLs from Marines.mil.
+    - Output: usmc_2025_messages_links.json
+
+---
+
+STEP 1a: Find new 2025 messages
+-------------------------------
+Run: usmc_daily_checker_2025.py
+
+Purpose:
+    - Scrapes to find all new messages.
+    - Writes all new messages to USMC_2025_messages_links.json
+    - Stops looking once it sees something already in the JSON
+
+Step 2: Enrich the Messages with Full Content
+---------------------------------------------
+Run:
+    python3 usmc_messages_enricher_2025.py
+
+Purpose:
+    - Builds printable view URLs using article IDs
+    - Extracts:
+        • Message number (e.g., MARADMIN 123/24)
+        • Title (from page or fallback to first body line)
+        • Signed date (from body)
+        • Full body text
+    - Output: usmc_messages_2025_enriched.json
+
+---
+
+Step 3: Clean and Normalize Message Text
+----------------------------------------
+Run:
+    python3 clean_usmc_json.py
+
+Purpose:
+    - Removes non-ASCII characters and Unicode artifacts (e.g., \u00a0)
+    - Collapses excessive whitespace and newlines
+    - Output: usmc_messages_cleaned.json
+
+---
+
+Step 4: Ask Questions with the QA Script
+----------------------------------------
+
+🧠 Option A — Direct QA with Full Content (higher token cost)
+Run:
+    python3 usmc_qa.py
+
+Purpose:
+    - Loads full enriched file
+    - Uses GPT to answer natural language questions
+    - May hit token limits on large datasets
+
+Input: usmc_messages_enriched.json or usmc_messages_cleaned.json
+
+---
+
+🔍 Option B — Fuzzy Title-Only Search (token-efficient, smart fallback)
+Run:
+    python3 usmc_qa_fuzzy.py
+
+Purpose:
+    - Loads only message titles and numbers
+    - Uses GPT to rank top 3–5 potentially relevant messages
+    - Then loads only those full texts for GPT to answer from
+    - Avoids token limits and works at larger scale
+
+Input: usmc_messages_cleaned.json (recommended)
+
+---
+
+Optional Files and Tools
+------------------------
+- enrichment_errors.log — URLs that failed during enrichment (can retry)
+- screenshots/ — Optional page screenshots saved by Selenium
+- /archive/ — Older scripts and experimental tools
+
+---
+
+******************
+
+usmc_qa_fuzzy.py gets us around the token limit by only intaking message numbers and titles and then using fuzzy logic to rank the top messages that may answer our questions.
